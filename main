@@ -1,21 +1,21 @@
 repeat task.wait() until game:IsLoaded()
 
-task.wait(3)
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20Legacy"))()
+end)
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20Legacy"))()
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm"))()
+end)
 
-task.wait(0.5)
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20skip"))()
+end)
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm"))()
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Tp"))()
+end)
 
-task.wait(0.5)
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20skip"))()
-
-task.wait(0.5)
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Tp"))()
-
-task.wait(0.5)
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Webhook"))()
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Webhook"))()
+end)
