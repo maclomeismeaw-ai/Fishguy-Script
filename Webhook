@@ -4,49 +4,67 @@ local HttpService = game:GetService("HttpService")
 
 local FILE_NAME = "webhook.txt"
 
--- โหลด webhook จากไฟล์
 if not isfile(FILE_NAME) then
-    warn("❌ ไม่พบไฟล์ webhook.txt")
     return
 end
 
 local WEBHOOK_URL = readfile(FILE_NAME):gsub("%s+", "")
 
-print("✅ โหลด Webhook สำเร็จ | รอเกมโหลด 1 วินาที")
-
 task.spawn(function()
-    task.wait(1)   -- รอเกมโหลด 1 วินาทีตามที่ต้องการ
+    task.wait(1)
 
-    -- เช็ค Toilet
     local toilet = workspace:FindFirstChild("Toilet", true)
 
     if not toilet then
-        print("🔴 ไม่พบ Toilet")
         return
     end
-
-    print("🟢 พบ Toilet → ส่ง Webhook")
 
     local leaderstats = LocalPlayer:WaitForChild("leaderstats", 5)
 
     local data = {
         ["username"] = "Fishguy Webhook",
         ["avatar_url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png",
-        ["content"] = "🟣⬛ **WEBHOOK TRIGGER** ⬛🟣",
+        ["content"] = "🔔**WEBHOOK TRIGGER**🔔",
         ["embeds"] = {{
-            ["title"] = "🌟 FISHGUY WEBHOOK TRIGGER 🌟",
+            ["title"] = "🐟 FISHGUY WEBHOOK TRIGGER 🐟",
             ["color"] = 0xA020F0,
             ["description"] = "**Lobby Trigger!**\n```diff\n+ Status Upload\n```",
-            ["thumbnail"] = { ["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png" },
-            ["image"] = { ["url"] = "https://files.catbox.moe/gmgvun.gif" },
-            ["fields"] = {
-                {["name"] = "👤 ผู้เล่น", ["value"] = "`" .. LocalPlayer.Name .. "`", ["inline"] = true},
-                {["name"] = "💰 Coins",   ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Coins") and leaderstats.Coins.Value or "N/A") .. "`", ["inline"] = true},
-                {["name"] = "💎 Gems",    ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Gems") and leaderstats.Gems.Value or "N/A") .. "`", ["inline"] = true},
-                {["name"] = "🏆 Wins",    ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Wins") and leaderstats.Wins.Value or "N/A") .. "`", ["inline"] = true},
-                {["name"] = "📤 Status",  ["value"] = "**Upload** ✅", ["inline"] = false}
+            ["thumbnail"] = {
+                ["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png"
             },
-            ["footer"] = { ["text"] = "Fishguy Webhook" },
+            ["image"] = {
+                ["url"] = "https://files.catbox.moe/gmgvun.gif"
+            },
+            ["fields"] = {
+                {
+                    ["name"] = "👤 Player",
+                    ["value"] = "`" .. LocalPlayer.Name .. "`",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "💰 Coins",
+                    ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Coins") and leaderstats.Coins.Value or "N/A") .. "`",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "💎 Gems",
+                    ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Gems") and leaderstats.Gems.Value or "N/A") .. "`",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🏆 Wins",
+                    ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Wins") and leaderstats.Wins.Value or "N/A") .. "`",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📤 Status",
+                    ["value"] = "**Upload** ✅",
+                    ["inline"] = false
+                }
+            },
+            ["footer"] = {
+                ["text"] = "Fishguy Webhook"
+            },
             ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
@@ -55,10 +73,10 @@ task.spawn(function()
         request({
             Url = WEBHOOK_URL,
             Method = "POST",
-            Headers = { ["Content-Type"] = "application/json" },
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
             Body = HttpService:JSONEncode(data)
         })
     end)
-
-    print("✅ ส่ง Webhook สำเร็จ")
 end)
