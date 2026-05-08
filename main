@@ -1,0 +1,9 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm"))()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20skip"))()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Tp"))()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Webhook"))()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20Legacy"))()
