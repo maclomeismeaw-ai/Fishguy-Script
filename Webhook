@@ -1,22 +1,28 @@
-local Players = game:GetService("Players")
+ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local HttpService = game:GetService("HttpService")
 
 local FILE_NAME = "webhook.txt"
 
--- ================== ดึงจากไฟล์ Delta ==================
-local WEBHOOK_URL = ""
+print("🔍 กำลังโหลดไฟล์จากเครื่อง...")
 
-if isfile(FILE_NAME) then
-    WEBHOOK_URL = readfile(FILE_NAME):gsub("%s+", ""):gsub("\n", ""):gsub("\r", "")
-    print("✅ ดึง Webhook จากไฟล์สำเร็จ → " .. FILE_NAME)
-else
-    warn("❌ ไม่พบไฟล์ webhook.txt ใน Delta Workspace")
-    print("💡 วิธีทำ: เปิด Delta → Workspace → New File → ตั้งชื่อ webhook.txt → วางลิงก์ Discord Webhook")
+-- ตรวจสอบและโหลดไฟล์
+if not isfile(FILE_NAME) then
+    warn("❌ ไม่พบไฟล์: " .. FILE_NAME)
+    print("📌 กรุณาสร้างไฟล์ webhook.txt ใน Workspace ของ Delta")
+    print("   แล้วใส่ลิงก์ Discord Webhook ลงไป")
     return
 end
 
-print("🚀 Fishguy Webhook (Delta Mode) เริ่มทำงาน...")
+local fileContent = readfile(FILE_NAME)
+local WEBHOOK_URL = fileContent:gsub("%s+", ""):gsub("\n", ""):gsub("\r", "")
+
+if WEBHOOK_URL == "" then
+    warn("❌ ไฟล์ webhook.txt ว่างเปล่า")
+    return
+end
+
+print("✅ โหลด Webhook จากไฟล์ในเครื่องสำเร็จ")
 
 task.spawn(function()
     task.wait(3)
@@ -29,10 +35,12 @@ task.spawn(function()
                       and workspace:FindFirstChild("statue", true)
                       and workspace:FindFirstChild("Toilet", true)
 
-    if not triggerFound then 
-        print("🔴 ไม่พบ Toilet Trigger")
-        return 
+    if not triggerFound then
+        print("🔴 ไม่พบ Trigger")
+        return
     end
+
+    print("🟢 พบ Trigger → กำลังส่งข้อมูล")
 
     local leaderstats = LocalPlayer:WaitForChild("leaderstats", 5)
 
@@ -67,5 +75,5 @@ task.spawn(function()
         })
     end)
 
-    print("✅ ส่ง Webhook สำเร็จ (ดึงจากไฟล์ Delta)")
+    print("✅ ส่ง Webhook สำเร็จ (โหลดจากไฟล์ในเครื่อง)")
 end)
