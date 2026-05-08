@@ -1,14 +1,27 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1492048055221092424/RJSnuBCSOshrJizBeq4ldZJLOksrPXsb-HZr6BTo25I8TJoA1xlhwscFLWKoDKbUd23O"
+local FILE_NAME = "webhook.txt"
 
-print("✅ Fishguy Webhook (GIF) ทำงานแล้ว")
+-- ================== ดึงจากไฟล์ Delta ==================
+local WEBHOOK_URL = ""
+
+if isfile(FILE_NAME) then
+    WEBHOOK_URL = readfile(FILE_NAME):gsub("%s+", ""):gsub("\n", ""):gsub("\r", "")
+    print("✅ ดึง Webhook จากไฟล์สำเร็จ → " .. FILE_NAME)
+else
+    warn("❌ ไม่พบไฟล์ webhook.txt ใน Delta Workspace")
+    print("💡 วิธีทำ: เปิด Delta → Workspace → New File → ตั้งชื่อ webhook.txt → วางลิงก์ Discord Webhook")
+    return
+end
+
+print("🚀 Fishguy Webhook (Delta Mode) เริ่มทำงาน...")
 
 task.spawn(function()
     task.wait(3)
 
-    -- ตรวจ Trigger
+    -- ตรวจ Toilet Trigger
     local triggerFound = workspace:FindFirstChild("Worlds", true)
                       and workspace:FindFirstChild("Lobby", true)
                       and workspace:FindFirstChild("MapDesign", true)
@@ -16,7 +29,10 @@ task.spawn(function()
                       and workspace:FindFirstChild("statue", true)
                       and workspace:FindFirstChild("Toilet", true)
 
-    if not triggerFound then return end
+    if not triggerFound then 
+        print("🔴 ไม่พบ Toilet Trigger")
+        return 
+    end
 
     local leaderstats = LocalPlayer:WaitForChild("leaderstats", 5)
 
@@ -28,12 +44,8 @@ task.spawn(function()
             ["title"] = "🌟 FISHGUY WEBHOOK TRIGGER 🌟",
             ["color"] = 0xA020F0,
             ["description"] = "**Lobby Trigger!**\n```diff\n+ Status Upload\n```",
-            ["thumbnail"] = {
-                ["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png"
-            },
-            ["image"] = {
-                ["url"] = "https://files.catbox.moe/gmgvun.gif"   -- GIF ของคุณ
-            },
+            ["thumbnail"] = { ["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png" },
+            ["image"] = { ["url"] = "https://files.catbox.moe/gmgvun.gif" },
             ["fields"] = {
                 {["name"] = "👤 ผู้เล่น", ["value"] = "`" .. LocalPlayer.Name .. "`", ["inline"] = true},
                 {["name"] = "💰 Coins",   ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Coins") and leaderstats.Coins.Value or "N/A") .. "`", ["inline"] = true},
@@ -51,7 +63,9 @@ task.spawn(function()
             Url = WEBHOOK_URL,
             Method = "POST",
             Headers = { ["Content-Type"] = "application/json" },
-            Body = game:GetService("HttpService"):JSONEncode(data)
+            Body = HttpService:JSONEncode(data)
         })
     end)
+
+    print("✅ ส่ง Webhook สำเร็จ (ดึงจากไฟล์ Delta)")
 end)
