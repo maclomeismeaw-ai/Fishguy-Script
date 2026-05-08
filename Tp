@@ -1,0 +1,47 @@
+local player = game:GetService("Players").LocalPlayer
+
+while true do
+    -- เช็ค Toilet
+    local toilet = workspace:FindFirstChild("Worlds")
+        and workspace.Worlds:FindFirstChild("Lobby")
+        and workspace.Worlds.Lobby:FindFirstChild("MapDesign")
+        and workspace.Worlds.Lobby.MapDesign:FindFirstChild("Decorations")
+        and workspace.Worlds.Lobby.MapDesign.Decorations:FindFirstChild("statue")
+        and workspace.Worlds.Lobby.MapDesign.Decorations.statue:FindFirstChild("Toilet")
+
+    if toilet then
+        local lifts = workspace:WaitForChild("Lifts"):GetChildren()
+        local target = lifts[6] and lifts[6]:FindFirstChild("Area")
+
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        if target then
+            hrp.CFrame = target.CFrame + Vector3.new(0, 3, 0)
+        end
+
+        task.wait(1)
+
+        -- กด Start
+        local button = player:WaitForChild("PlayerGui")
+            :WaitForChild("Lobby")
+            :WaitForChild("QueueFrame")
+            :WaitForChild("Start")
+
+        for _,v in pairs(getconnections(button.Activated)) do
+            v:Fire()
+        end
+
+        -- รอแล้วรีเซ็ตตัวละคร
+        task.wait(0.5)
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Health = 0
+        end
+
+        -- รอเกิดใหม่ก่อนวนต่อ
+        player.CharacterAdded:Wait()
+    end
+
+    -- หน่วง 10 วิ ก่อนเช็ครอบใหม่
+    task.wait(10)
+end

@@ -1,0 +1,57 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1492048055221092424/RJSnuBCSOshrJizBeq4ldZJLOksrPXsb-HZr6BTo25I8TJoA1xlhwscFLWKoDKbUd23O"
+
+print("✅ Fishguy Webhook (GIF) ทำงานแล้ว")
+
+task.spawn(function()
+    task.wait(3)
+
+    -- ตรวจ Trigger
+    local triggerFound = workspace:FindFirstChild("Worlds", true)
+                      and workspace:FindFirstChild("Lobby", true)
+                      and workspace:FindFirstChild("MapDesign", true)
+                      and workspace:FindFirstChild("Decorations", true)
+                      and workspace:FindFirstChild("statue", true)
+                      and workspace:FindFirstChild("Toilet", true)
+
+    if not triggerFound then return end
+
+    local leaderstats = LocalPlayer:WaitForChild("leaderstats", 5)
+
+    local data = {
+        ["username"] = "Fishguy Webhook",
+        ["avatar_url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png",
+        ["content"] = "🟣⬛ **WEBHOOK TRIGGER** ⬛🟣",
+        ["embeds"] = {{
+            ["title"] = "🌟 FISHGUY WEBHOOK TRIGGER 🌟",
+            ["color"] = 0xA020F0,
+            ["description"] = "**Lobby Trigger!**\n```diff\n+ Status Upload\n```",
+            ["thumbnail"] = {
+                ["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png"
+            },
+            ["image"] = {
+                ["url"] = "https://files.catbox.moe/gmgvun.gif"   -- GIF ของคุณ
+            },
+            ["fields"] = {
+                {["name"] = "👤 ผู้เล่น", ["value"] = "`" .. LocalPlayer.Name .. "`", ["inline"] = true},
+                {["name"] = "💰 Coins",   ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Coins") and leaderstats.Coins.Value or "N/A") .. "`", ["inline"] = true},
+                {["name"] = "💎 Gems",    ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Gems") and leaderstats.Gems.Value or "N/A") .. "`", ["inline"] = true},
+                {["name"] = "🏆 Wins",    ["value"] = "`" .. (leaderstats and leaderstats:FindFirstChild("Wins") and leaderstats.Wins.Value or "N/A") .. "`", ["inline"] = true},
+                {["name"] = "📤 Status",  ["value"] = "**Upload** ✅", ["inline"] = false}
+            },
+            ["footer"] = { ["text"] = "Fishguy Webhook" },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+
+    pcall(function()
+        request({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = game:GetService("HttpService"):JSONEncode(data)
+        })
+    end)
+end)
