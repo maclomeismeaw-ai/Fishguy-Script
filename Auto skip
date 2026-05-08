@@ -1,6 +1,5 @@
 local player = game:GetService("Players").LocalPlayer
 
--- หา button แบบชัวร์
 local button = player:WaitForChild("PlayerGui")
     :WaitForChild("Match")
     :WaitForChild("TopFrame")
@@ -10,15 +9,13 @@ local button = player:WaitForChild("PlayerGui")
 while true do
     local color = button.BackgroundColor3
 
-    -- เช็คว่าเป็นสีแดง (255,0,0)
     if color.R == 1 and color.G == 0 and color.B == 0 then
-        -- กด 1 ครั้ง
         for _,v in pairs(getconnections(button.Activated)) do
             v:Fire()
         end
 
-        task.wait(0.5) -- กันกดซ้ำติด
+        task.wait(0.5)
     end
 
-    task.wait(1) -- เช็คทุก 1 วิ
+    task.wait(1)
 end
