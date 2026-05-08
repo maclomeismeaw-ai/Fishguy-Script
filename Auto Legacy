@@ -1,7 +1,6 @@
 local player = game:GetService("Players").LocalPlayer
 
 while true do
-    -- วาปไป Portal
     local portal = workspace.Illusion.LegacyPortal:WaitForChild("STGardenPortal")
 
     local char = player.Character or player.CharacterAdded:Wait()
@@ -11,7 +10,6 @@ while true do
 
     task.wait(2)
 
-    -- หา Button
     local button = player.PlayerGui.Teleports["Lobby -> Legacy"].Teleport.Button
 
     for _,v in pairs(getconnections(button.Activated)) do
