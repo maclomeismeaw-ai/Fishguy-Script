@@ -14,11 +14,9 @@ while true do
     -- หา Button
     local button = player.PlayerGui.Teleports["Lobby -> Legacy"].Teleport.Button
 
-    -- กดแบบเนียน
     for _,v in pairs(getconnections(button.Activated)) do
         v:Fire()
     end
 
-    -- รอ 10 วิก่อนทำรอบใหม่
     task.wait(10)
 end
