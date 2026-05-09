@@ -134,7 +134,7 @@ end
 local lane1 = Vector3.new(-69.5605, 2.2020, 55.6358)
 local lane2 = lane1 + Vector3.new(5,0,0)
 
-local offsetZ = 5
+local offsetZ = 3
 
 placeAndMaxNinja(lane1)
 placeAndMaxNinja(lane2)
