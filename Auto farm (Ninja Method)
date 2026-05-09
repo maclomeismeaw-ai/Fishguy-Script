@@ -82,6 +82,25 @@ local function getUnitByValue(unitName, num)
     end
 end
 
+local function getLatestHeli()
+    local latest = nil
+    local highest = 0
+
+    for _, v in ipairs(troops:GetChildren()) do
+        if v.Name == "CameraHelicopter" then
+
+            local val = v:FindFirstChild("Value")
+
+            if val and val.Value > highest then
+                highest = val.Value
+                latest = v
+            end
+        end
+    end
+
+    return latest
+end
+
 local ninjaValue = 0
 
 local function placeAndMaxNinja(position)
@@ -132,8 +151,6 @@ lane1 = lane1 + Vector3.new(0,0,offsetZ)
 
 placeAndMaxNinja(lane1)
 
-local heliValue = 0
-
 local function placeAndMaxHeli(position)
     waitMoney(HELI_PLACE)
 
@@ -143,9 +160,7 @@ local function placeAndMaxHeli(position)
 
     task.wait(1)
 
-    heliValue += 1
-
-    local heli = getUnitByValue("CameraHelicopter", heliValue)
+    local heli = getLatestHeli()
 
     if not heli then
         return
@@ -154,10 +169,8 @@ local function placeAndMaxHeli(position)
     for _, cost in ipairs(HELI_UPGRADES) do
         waitMoney(cost)
 
-        local target = getUnitByValue("CameraHelicopter", heliValue)
-
-        if target then
-            upgrade(target)
+        if heli and heli.Parent then
+            upgrade(heli)
         end
     end
 end
