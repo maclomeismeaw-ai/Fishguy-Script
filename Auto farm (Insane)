@@ -72,21 +72,6 @@ local function sell(unit)
 	task.wait(1)
 end
 
-local function mechSkill(unit)
-	if not unit then return end
-
-	local args = {
-		[1] = {
-			[1] = {
-				[1] = "\226\129\130%",
-				[2] = unit
-			}
-		}
-	}
-
-	RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
-end
-
 local function placeCheck(unitName, position, slot)
 	local before = 0
 
@@ -185,8 +170,6 @@ local function placeAndMaxNinja(position)
 	return ninja
 end
 
-local mechs = {}
-
 local function placeAndMaxMech(position)
 	local mech = placeMech(position)
 	if not mech then return end
@@ -196,22 +179,6 @@ local function placeAndMaxMech(position)
 		if mech and mech.Parent then
 			upgrade(mech)
 		end
-	end
-
-	table.insert(mechs, mech)
-
-	if #mechs == 3 then
-		task.spawn(function()
-			while true do
-				for i = 1,3 do
-					local unit = mechs[i]
-					if unit and unit.Parent then
-						mechSkill(unit)
-						task.wait(0.2)
-					end
-				end
-			end
-		end)
 	end
 end
 
@@ -234,7 +201,12 @@ end
 
 local scientists = {}
 
-local sciPos = Vector3.new(-95.4683837890625,2.3020589351654053,25.501419067382812)
+-- เปลี่ยนจุดเริ่ม Scientist
+local sciPos = Vector3.new(
+	-95.4683837890625,
+	2.302058458328247,
+	25.501419067382812
+)
 
 for i = 1,4 do
 	local scientist = placeScientist(sciPos)
@@ -248,7 +220,11 @@ for i = 1,2 do
 end
 
 local ninja = placeAndMaxNinja(
-	Vector3.new(-2.121683120727539,2.3020589351654053,-23.403955459594727)
+	Vector3.new(
+		-2.121683120727539,
+		2.3020589351654053,
+		-23.403955459594727
+	)
 )
 
 for i = 3,4 do
@@ -271,11 +247,36 @@ for i = 3,4 do
 	upgrade(scientists[i])
 end
 
-placeAndMaxMech(Vector3.new(26.123302459716797,5.0202741622924805,-52.41946029663086))
-placeAndMaxMech(Vector3.new(25.471519470214844,5.0202741622924805,-77.07902526855469))
-placeAndMaxMech(Vector3.new(-16.83924102783203,5.020275115966797,-28.493465423583984))
+placeAndMaxMech(
+	Vector3.new(
+		26.123302459716797,
+		5.0202741622924805,
+		-52.41946029663086
+	)
+)
 
-local spiderStart = Vector3.new(-6.893928527832031,2.268204927444458,-59.75060272216797)
+placeAndMaxMech(
+	Vector3.new(
+		25.471519470214844,
+		5.0202741622924805,
+		-77.07902526855469
+	)
+)
+
+placeAndMaxMech(
+	Vector3.new(
+		-16.83924102783203,
+		5.020275115966797,
+		-28.493465423583984
+	)
+)
+
+-- ขยับ Spider จุดเริ่มแกน Z มา 15 stud
+local spiderStart = Vector3.new(
+	4.893928527832031,
+	2.268204927444458,
+	-44.75060272216797
+)
 
 local row1 = spiderStart
 local row2 = spiderStart + Vector3.new(-4,0,0)
