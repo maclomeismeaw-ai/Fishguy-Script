@@ -1,0 +1,43 @@
+local player = game:GetService("Players").LocalPlayer
+
+while true do
+    local toilet = workspace:FindFirstChild("Worlds")
+        and workspace.Worlds:FindFirstChild("Lobby")
+        and workspace.Worlds.Lobby:FindFirstChild("MapDesign")
+        and workspace.Worlds.Lobby.MapDesign:FindFirstChild("Decorations")
+        and workspace.Worlds.Lobby.MapDesign.Decorations:FindFirstChild("statue")
+        and workspace.Worlds.Lobby.MapDesign.Decorations.statue:FindFirstChild("Toilet")
+
+    if toilet then
+        local lifts = workspace:WaitForChild("Lifts"):GetChildren()
+        local target = lifts[14] and lifts[14]:FindFirstChild("Area")
+
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        if target then
+            hrp.CFrame = target.CFrame + Vector3.new(0, 3, 0)
+        end
+
+        task.wait(1)
+
+        local button = player:WaitForChild("PlayerGui")
+            :WaitForChild("Lobby")
+            :WaitForChild("QueueFrame")
+            :WaitForChild("Start")
+
+        for _, v in pairs(getconnections(button.Activated)) do
+            v:Fire()
+        end
+
+        task.wait(0.5)
+
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Health = 0
+        end
+
+        player.CharacterAdded:Wait()
+    end
+
+    task.wait(10)
+end
