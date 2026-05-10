@@ -23,7 +23,7 @@ end
 while true do
     local wave = currentWave.Value
 
-    if wave >= 1 and wave <= 39 then
+    if wave >= 0 and wave <= 39 then
         if isRed() then
             clickButton()
             task.wait(0.5)
