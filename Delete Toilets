@@ -1,0 +1,3 @@
+if workspace:FindFirstChild("Attackers") then
+    workspace.Attackers:Destroy()
+end
