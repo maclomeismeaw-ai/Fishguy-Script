@@ -254,7 +254,7 @@ placeAndMaxMech(
 	)
 )
 
-placeMech(
+placeAndMaxMech(
 	Vector3.new(
 		25.471519470214844,
 		5.0202741622924805,
@@ -262,7 +262,7 @@ placeMech(
 	)
 )
 
-placeMech(
+placeAndMaxMech(
 	Vector3.new(
 		-16.83924102783203,
 		5.020275115966797,
