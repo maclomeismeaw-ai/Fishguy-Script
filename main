@@ -42,9 +42,19 @@ elseif Method == "Insane" then
 
 end
 
-task.spawn(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Tp"))()
-end)
+if Method == "Insane" then
+
+    task.spawn(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Tp%20%28Insane%29"))()
+    end)
+
+else
+
+    task.spawn(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Tp"))()
+    end)
+
+end
 
 task.spawn(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Webhook"))()
