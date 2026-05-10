@@ -23,21 +23,18 @@ end
 while true do
     local wave = currentWave.Value
 
-    -- Wave 1 - 39 = ต้องไม่แดง
     if wave >= 1 and wave <= 39 then
         if isRed() then
             clickButton()
             task.wait(0.5)
         end
 
-    -- Wave 40 = ต้องแดงค้างจนถึง 41
     elseif wave == 40 then
         if not isRed() then
             clickButton()
             task.wait(0.5)
         end
 
-    -- Wave 41 - 50 = ต้องไม่แดง
     elseif wave >= 41 and wave <= 50 then
         if isRed() then
             clickButton()
