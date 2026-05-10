@@ -1,20 +1,41 @@
-local player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
-while true do
-    local portal = workspace.Illusion.LegacyPortal:WaitForChild("STGardenPortal")
+-- รอเกมโหลดเสร็จ
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
+-- รอ Character โหลด
+local function getCharacter()
     local char = player.Character or player.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
+    return char, hrp
+end
 
+while true do
+    -- รอ Object ต่างๆโหลด
+    local illusion = workspace:WaitForChild("Illusion")
+    local legacyPortal = illusion:WaitForChild("LegacyPortal")
+    local portal = legacyPortal:WaitForChild("STGardenPortal")
+
+    local _, hrp = getCharacter()
+
+    -- วาป
     hrp.CFrame = portal:GetPivot() + Vector3.new(0, 3, 0)
 
     task.wait(2)
 
-    local button = player.PlayerGui.Teleports["Lobby -> Legacy"].Teleport.Button
+    -- รอ GUI โหลด
+    local playerGui = player:WaitForChild("PlayerGui")
+    local teleports = playerGui:WaitForChild("Teleports")
+    local lobbyTeleport = teleports:WaitForChild("Lobby -> Legacy")
+    local button = lobbyTeleport:WaitForChild("Teleport"):WaitForChild("Button")
 
-    for _,v in pairs(getconnections(button.Activated)) do
+    -- กดปุ่ม
+    for _, v in pairs(getconnections(button.Activated)) do
         v:Fire()
     end
 
-    task.wait(10)
+    task.wait(5)
 end
