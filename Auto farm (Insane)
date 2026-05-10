@@ -201,7 +201,6 @@ end
 
 local scientists = {}
 
--- เปลี่ยนจุดเริ่ม Scientist
 local sciPos = Vector3.new(
 	-95.4683837890625,
 	2.302058458328247,
