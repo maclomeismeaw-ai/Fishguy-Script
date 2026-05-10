@@ -10,14 +10,18 @@ task.spawn(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20Legacy"))()
 end)
 
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20skip"))()
+end)
+
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Delete%20Toilets"))()
+end)
+
 if Method == "Ninja" then
 
     task.spawn(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm%20%28Ninja%20Method%29"))()
-    end)
-
-    task.spawn(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20skip"))()
     end)
 
 elseif Method == "Camera" then
@@ -26,18 +30,10 @@ elseif Method == "Camera" then
         loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm%20%28Camera%20Spider%20Method%29"))()
     end)
 
-    task.spawn(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20skip"))()
-    end)
-
 elseif Method == "Insane" then
 
     task.spawn(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm%20%28Insane%29"))()
-    end)
-
-    task.spawn(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20skip%20%28Insane%29"))()
     end)
 
 end
