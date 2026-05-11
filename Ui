@@ -61,7 +61,7 @@ discord.Position = UDim2.new(0.5,0,0.71,0)
 discord.Size = UDim2.new(0,600,0,40)
 
 discord.BackgroundTransparency = 1
-discord.Text = "Discord : discord.gg/ez2E2WWDA"
+discord.Text = "Discord : discord.gg/WyVueshvB"
 discord.TextColor3 = Color3.fromRGB(180,180,180)
 discord.TextScaled = true
 discord.Font = Enum.Font.Arcade
