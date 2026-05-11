@@ -4,6 +4,8 @@ local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local money = player:WaitForChild("leaderstats"):WaitForChild("Money")
 local troops = workspace:WaitForChild("Troops")
+local remote = RS.NetworkingContainer.DataRemote
+local currentWave = RS:WaitForChild("MatchData"):WaitForChild("CurrentWave")
 
 local SCIENTIST_PLACE = 100
 local SCIENTIST_UPGRADES = {300,600}
@@ -17,89 +19,23 @@ local MECH_UPGRADES = {300,500,800,1000}
 local SPIDER_PLACE = 300
 local SPIDER_UPGRADES = {800,1500,3000,5000}
 
+repeat task.wait() until currentWave.Value == 1
+task.wait(1)
+
 local function waitMoney(amount)
 	while money.Value < amount do
 		money:GetPropertyChangedSignal("Value"):Wait()
 	end
-	task.wait(1)
 end
 
-local function place(unitName, position, slot)
-	local args = {
-		[1] = {
-			[1] = {
-				[1] = "\226\129\130\22",
-				[2] = unitName,
-				[3] = position,
-				[4] = slot
-			}
-		}
-	}
-
-	RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
-	task.wait(1)
-end
-
-local function upgrade(unit)
-	if not unit then return end
-
-	local args = {
-		[1] = {
-			[1] = {
-				[1] = "\226\129\130#",
-				[2] = unit
-			}
-		}
-	}
-
-	RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
-	task.wait(1)
-end
-
-local function sell(unit)
-	if not unit then return end
-
-	local args = {
-		[1] = {
-			[1] = {
-				[1] = "\226\129\130$",
-				[2] = unit
-			}
-		}
-	}
-
-	RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
-	task.wait(1)
-end
-
-local function placeCheck(unitName, position, slot)
-	local before = 0
-
+local function countUnits(name)
+	local total = 0
 	for _,v in ipairs(troops:GetChildren()) do
-		if v.Name == unitName then
-			before += 1
+		if v.Name == name then
+			total += 1
 		end
 	end
-
-	place(unitName, position, slot)
-
-	task.wait(1)
-
-	local after = 0
-
-	for _,v in ipairs(troops:GetChildren()) do
-		if v.Name == unitName then
-			after += 1
-		end
-	end
-
-	return after > before
-end
-
-local function forcePlace(unitName, position, slot)
-	repeat
-		task.wait(0.5)
-	until placeCheck(unitName, position, slot)
+	return total
 end
 
 local function updateValues(unitName)
@@ -111,15 +47,17 @@ local function updateValues(unitName)
 
 			local val = v:FindFirstChild("Value") or Instance.new("IntValue")
 			val.Name = "Value"
-			val.Parent = v
 			val.Value = index
+			val.Parent = v
 		end
 	end
 end
 
 local function getLatest(unitName)
-	local latest = nil
+	updateValues(unitName)
+
 	local highest = 0
+	local found = nil
 
 	for _,v in ipairs(troops:GetChildren()) do
 		if v.Name == unitName then
@@ -127,153 +65,184 @@ local function getLatest(unitName)
 
 			if val and val.Value > highest then
 				highest = val.Value
-				latest = v
+				found = v
 			end
 		end
 	end
 
-	return latest
+	return found
 end
 
-local function placeScientist(position)
-	waitMoney(SCIENTIST_PLACE)
-	forcePlace("ScientistCameraman", position, 1)
-	updateValues("ScientistCameraman")
-	task.wait(1)
-	return getLatest("ScientistCameraman")
-end
-
-local function placeMech(position)
-	waitMoney(MECH_PLACE)
-	forcePlace("MechCameraman", position, 1)
-	updateValues("MechCameraman")
-	task.wait(1)
-	return getLatest("MechCameraman")
-end
-
-local function placeAndMaxNinja(position)
-	waitMoney(NINJA_PLACE)
-	forcePlace("NinjaCameraman", position, 1)
-	updateValues("NinjaCameraman")
-	task.wait(1)
-
-	local ninja = getLatest("NinjaCameraman")
-	if not ninja then return end
-
-	for i = 1,2 do
-		waitMoney(NINJA_UPGRADES[i])
-		if ninja and ninja.Parent then
-			upgrade(ninja)
-		end
-	end
-
-	return ninja
-end
-
-local function placeAndMaxMech(position)
-	local mech = placeMech(position)
-	if not mech then return end
-
-	for _,cost in ipairs(MECH_UPGRADES) do
+local function place(unitName,pos,slot,cost)
+	while true do
 		waitMoney(cost)
-		if mech and mech.Parent then
-			upgrade(mech)
-		end
+
+		local before = countUnits(unitName)
+
+		local args = {
+			[1] = {
+				[1] = {
+					[1] = "\226\129\130\22",
+					[2] = unitName,
+					[3] = pos,
+					[4] = slot
+				}
+			}
+		}
+
+		remote:FireServer(unpack(args))
+
+		local start = tick()
+
+		repeat
+			task.wait(0.3)
+
+			if countUnits(unitName) > before then
+				task.wait(0.5)
+				return getLatest(unitName)
+			end
+
+		until tick() - start >= 3
 	end
 end
 
-local function placeAndMaxSpider(position)
-	waitMoney(SPIDER_PLACE)
-	forcePlace("CameraSpider", position, 1)
-	updateValues("CameraSpider")
-	task.wait(1)
+local function upgradeToLevel(unit,targetLevel,costs)
+	if not unit then return end
 
-	local spider = getLatest("CameraSpider")
-	if not spider then return end
+	while unit and unit.Parent do
+		local level = unit:FindFirstChild("TroopLevel")
 
-	for _,cost in ipairs(SPIDER_UPGRADES) do
-		waitMoney(cost)
-		if spider and spider.Parent then
-			upgrade(spider)
+		if not level then
+			task.wait(0.5)
+			continue
 		end
+
+		if level.Value >= targetLevel then
+			return
+		end
+
+		local nextCost = costs[level.Value]
+
+		if nextCost then
+			waitMoney(nextCost)
+		end
+
+		local before = level.Value
+
+		local args = {
+			[1] = {
+				[1] = {
+					[1] = "\226\129\130#",
+					[2] = unit
+				}
+			}
+		}
+
+		remote:FireServer(unpack(args))
+
+		local start = tick()
+
+		repeat
+			task.wait(0.3)
+
+			if not unit or not unit.Parent then
+				return
+			end
+
+			level = unit:FindFirstChild("TroopLevel")
+
+			if level and level.Value > before then
+				break
+			end
+
+		until tick() - start >= 3
 	end
+end
+
+local function sell(unit)
+	if not unit or not unit.Parent then return end
+
+	local args = {
+		[1] = {
+			[1] = {
+				[1] = "\226\129\130$",
+				[2] = unit
+			}
+		}
+	}
+
+	repeat
+		remote:FireServer(unpack(args))
+		task.wait(0.5)
+	until not unit.Parent
+end
+
+local function placeScientist(pos)
+	local unit = place("ScientistCameraman",pos,1,SCIENTIST_PLACE)
+	upgradeToLevel(unit,3,SCIENTIST_UPGRADES)
+	return unit
+end
+
+local function placeNinja(pos)
+	local unit = place("NinjaCameraman",pos,1,NINJA_PLACE)
+	upgradeToLevel(unit,4,NINJA_UPGRADES)
+	return unit
+end
+
+local function placeMech(pos)
+	local unit = place("MechCameraman",pos,1,MECH_PLACE)
+	upgradeToLevel(unit,5,MECH_UPGRADES)
+	return unit
+end
+
+local function placeSpider(pos)
+	local unit = place("CameraSpider",pos,1,SPIDER_PLACE)
+	upgradeToLevel(unit,5,SPIDER_UPGRADES)
+	return unit
 end
 
 local scientists = {}
 
-local sciPos = Vector3.new(
-	-95.4683837890625,
-	2.302058458328247,
-	25.501419067382812
-)
+local sciPos = Vector3.new(-95.46838,2.30205,25.50141)
 
 for i = 1,4 do
-	local scientist = placeScientist(sciPos)
-	table.insert(scientists, scientist)
-	sciPos = sciPos + Vector3.new(0,0,3)
+	local s = place("ScientistCameraman",sciPos,1,SCIENTIST_PLACE)
+	table.insert(scientists,s)
+	sciPos += Vector3.new(0,0,3)
 end
 
-for i = 1,2 do
-	waitMoney(SCIENTIST_UPGRADES[1])
-	upgrade(scientists[i])
+for i = 1,4 do
+	upgradeToLevel(scientists[i],3,SCIENTIST_UPGRADES)
 end
 
-local ninja = placeAndMaxNinja(
-	Vector3.new(
-		-2.121683120727539,
-		2.3020589351654053,
-		-23.403955459594727
-	)
-)
+local ninja = placeNinja(Vector3.new(
+-2.12168,
+2.30205,
+-23.40395
+))
 
-for i = 3,4 do
-	waitMoney(SCIENTIST_UPGRADES[1])
-	upgrade(scientists[i])
-end
+placeMech(Vector3.new(
+26.12330,
+5.02027,
+-52.41946
+))
 
-for i = 1,2 do
-	waitMoney(SCIENTIST_UPGRADES[2])
-	upgrade(scientists[i])
-end
+placeMech(Vector3.new(
+25.47151,
+5.02027,
+-77.07902
+))
 
-if ninja and ninja.Parent then
-	waitMoney(NINJA_UPGRADES[3])
-	upgrade(ninja)
-end
-
-for i = 3,4 do
-	waitMoney(SCIENTIST_UPGRADES[2])
-	upgrade(scientists[i])
-end
-
-placeAndMaxMech(
-	Vector3.new(
-		26.123302459716797,
-		5.0202741622924805,
-		-52.41946029663086
-	)
-)
-
-placeAndMaxMech(
-	Vector3.new(
-		25.471519470214844,
-		5.0202741622924805,
-		-77.07902526855469
-	)
-)
-
-placeAndMaxMech(
-	Vector3.new(
-		-16.83924102783203,
-		5.020275115966797,
-		-28.493465423583984
-	)
-)
+placeMech(Vector3.new(
+-16.83924,
+5.02027,
+-28.49346
+))
 
 local spiderStart = Vector3.new(
-	-6.893928527832031,
-	2.268204927444458,
-	-44.75060272216797
+-6.89392,
+2.26820,
+-44.75060
 )
 
 local row1 = spiderStart
@@ -283,40 +252,37 @@ local row3 = spiderStart + Vector3.new(-8,0,0)
 local spiderCount = 0
 local scientistSellIndex = 1
 
-local function spawnSpider(position)
+local function spawnSpider(pos)
 	spiderCount += 1
 
 	if spiderCount == 8 then
-		local ninjaUnit = troops:FindFirstChild("NinjaCameraman")
-		if ninjaUnit then
-			sell(ninjaUnit)
-		end
+		sell(ninja)
 	end
 
 	if spiderCount >= 9 and spiderCount <= 12 then
 		local target = scientists[scientistSellIndex]
 
-		if target and target.Parent then
+		if target then
 			sell(target)
 		end
 
 		scientistSellIndex += 1
 	end
 
-	placeAndMaxSpider(position)
+	placeSpider(pos)
 end
 
 for i = 1,5 do
 	spawnSpider(row1)
-	row1 = row1 + Vector3.new(0,0,-4)
+	row1 += Vector3.new(0,0,-4)
 end
 
 for i = 1,5 do
 	spawnSpider(row2)
-	row2 = row2 + Vector3.new(0,0,-4)
+	row2 += Vector3.new(0,0,-4)
 end
 
 for i = 1,2 do
 	spawnSpider(row3)
-	row3 = row3 + Vector3.new(0,0,-4)
+	row3 += Vector3.new(0,0,-4)
 end
