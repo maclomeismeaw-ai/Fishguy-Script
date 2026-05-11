@@ -203,46 +203,72 @@ end
 
 local scientists = {}
 
-local sciPos = Vector3.new(-95.46838,2.30205,25.50141)
+local sciPos = Vector3.new(
+	-95.4683837890625,
+	2.302058458328247,
+	25.501419067382812
+)
 
 for i = 1,4 do
-	local s = place("ScientistCameraman",sciPos,1,SCIENTIST_PLACE)
-	table.insert(scientists,s)
-	sciPos += Vector3.new(0,0,3)
+	local scientist = place("ScientistCameraman", sciPos, 1, SCIENTIST_PLACE)
+	table.insert(scientists, scientist)
+	sciPos = sciPos + Vector3.new(0,0,3)
 end
 
-for i = 1,4 do
-	upgradeToLevel(scientists[i],3,SCIENTIST_UPGRADES)
+for i = 1,2 do
+	upgradeToLevel(scientists[i], 2, SCIENTIST_UPGRADES)
 end
 
-local ninja = placeNinja(Vector3.new(
--2.12168,
-2.30205,
--23.40395
+local ninja = place("NinjaCameraman",
+	Vector3.new(
+		-2.121683120727539,
+		2.3020589351654053,
+		-23.403955459594727
+	),
+	1,
+	NINJA_PLACE
+)
+
+upgradeToLevel(ninja, 3, NINJA_UPGRADES)
+
+for i = 3,4 do
+	upgradeToLevel(scientists[i], 2, SCIENTIST_UPGRADES)
+end
+
+for i = 1,2 do
+	upgradeToLevel(scientists[i], 3, SCIENTIST_UPGRADES)
+end
+
+if ninja and ninja.Parent then
+	upgradeToLevel(ninja, 4, NINJA_UPGRADES)
+end
+
+for i = 3,4 do
+	upgradeToLevel(scientists[i], 3, SCIENTIST_UPGRADES)
+end
+
+placeMech(Vector3.new(
+	26.123302459716797,
+	5.0202741622924805,
+	-52.41946029663086
 ))
 
 placeMech(Vector3.new(
-26.12330,
-5.02027,
--52.41946
+	25.471519470214844,
+	5.0202741622924805,
+	-77.07902526855469
 ))
 
 placeMech(Vector3.new(
-25.47151,
-5.02027,
--77.07902
-))
-
-placeMech(Vector3.new(
--16.83924,
-5.02027,
--28.49346
+	-16.83924102783203,
+	5.020275115966797,
+	-28.493465423583984
 ))
 
 local spiderStart = Vector3.new(
--6.89392,
-2.26820,
--44.75060
+	-6.893928527832031,
+	2.268204927444458,
+	-44.75060272216797
 )
 
 local row1 = spiderStart
@@ -252,7 +278,7 @@ local row3 = spiderStart + Vector3.new(-8,0,0)
 local spiderCount = 0
 local scientistSellIndex = 1
 
-local function spawnSpider(pos)
+local function spawnSpider(position)
 	spiderCount += 1
 
 	if spiderCount == 8 then
@@ -262,27 +288,27 @@ local function spawnSpider(pos)
 	if spiderCount >= 9 and spiderCount <= 12 then
 		local target = scientists[scientistSellIndex]
 
-		if target then
+		if target and target.Parent then
 			sell(target)
 		end
 
 		scientistSellIndex += 1
 	end
 
-	placeSpider(pos)
+	placeSpider(position)
 end
 
 for i = 1,5 do
 	spawnSpider(row1)
-	row1 += Vector3.new(0,0,-4)
+	row1 = row1 + Vector3.new(0,0,-4)
 end
 
 for i = 1,5 do
 	spawnSpider(row2)
-	row2 += Vector3.new(0,0,-4)
+	row2 = row2 + Vector3.new(0,0,-4)
 end
 
 for i = 1,2 do
 	spawnSpider(row3)
-	row3 += Vector3.new(0,0,-4)
+	row3 = row3 + Vector3.new(0,0,-4)
 end
