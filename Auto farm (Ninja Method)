@@ -4,6 +4,8 @@ local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local money = player:WaitForChild("leaderstats"):WaitForChild("Money")
 local troops = workspace:WaitForChild("Troops")
+local currentWave = RS:WaitForChild("MatchData"):WaitForChild("CurrentWave")
+local remote = RS.NetworkingContainer.DataRemote
 
 local NINJA_PLACE = 200
 local NINJA_UPGRADES = {200,300,400,600}
@@ -11,67 +13,47 @@ local NINJA_UPGRADES = {200,300,400,600}
 local HELI_PLACE = 200
 local HELI_UPGRADES = {300,500,800,1500}
 
+repeat
+    task.wait()
+until currentWave.Value == 1
+
+task.wait(1)
+
 local function waitMoney(amount)
     while money.Value < amount do
         money:GetPropertyChangedSignal("Value"):Wait()
     end
-    task.wait(1)
 end
 
-local function place(unitName, position, slot)
-    local args = {
-        [1] = {
-            [1] = {
-                [1] = "\226\129\130\22",
-                [2] = unitName,
-                [3] = position,
-                [4] = slot
-            }
-        }
-    }
+local function countUnits(name)
+    local total = 0
 
-    RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
-
-    task.wait(1)
-end
-
-local function upgrade(unit)
-    if not unit then
-        return
+    for _,v in ipairs(troops:GetChildren()) do
+        if v.Name == name then
+            total += 1
+        end
     end
 
-    local args = {
-        [1] = {
-            [1] = {
-                [1] = "\226\129\130#",
-                [2] = unit
-            }
-        }
-    }
-
-    RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
-
-    task.wait(1)
+    return total
 end
 
 local function updateValues(unitName)
     local index = 0
 
-    for _, v in ipairs(troops:GetChildren()) do
+    for _,v in ipairs(troops:GetChildren()) do
         if v.Name == unitName then
             index += 1
 
             local val = v:FindFirstChild("Value") or Instance.new("IntValue")
-
             val.Name = "Value"
-            val.Parent = v
             val.Value = index
+            val.Parent = v
         end
     end
 end
 
-local function getUnitByValue(unitName, num)
-    for _, v in ipairs(troops:GetChildren()) do
+local function getUnitByValue(unitName,num)
+    for _,v in ipairs(troops:GetChildren()) do
         if v.Name == unitName then
             local val = v:FindFirstChild("Value")
 
@@ -82,56 +64,147 @@ local function getUnitByValue(unitName, num)
     end
 end
 
-local function getLatestHeli()
-    local latest = nil
+local function getLatestUnit(unitName)
+    updateValues(unitName)
+
     local highest = 0
+    local found = nil
 
-    for _, v in ipairs(troops:GetChildren()) do
-        if v.Name == "CameraHelicopter" then
-
+    for _,v in ipairs(troops:GetChildren()) do
+        if v.Name == unitName then
             local val = v:FindFirstChild("Value")
 
             if val and val.Value > highest then
                 highest = val.Value
-                latest = v
+                found = v
             end
         end
     end
 
-    return latest
+    return found
 end
 
-local ninjaValue = 0
+local function placeUnit(unitName,pos,slot,cost)
+    while true do
+        waitMoney(cost)
 
-local function placeAndMaxNinja(position)
-    waitMoney(NINJA_PLACE)
+        local before = countUnits(unitName)
 
-    place("NinjaCameraman", position, 1)
+        local args = {
+            [1] = {
+                [1] = {
+                    [1] = "\226\129\130\22",
+                    [2] = unitName,
+                    [3] = pos,
+                    [4] = slot
+                }
+            }
+        }
+
+        remote:FireServer(unpack(args))
+
+        local start = tick()
+
+        repeat
+            task.wait(0.3)
+
+            if countUnits(unitName) > before then
+                task.wait(0.5)
+                return getLatestUnit(unitName)
+            end
+
+        until tick() - start >= 3
+    end
+end
+
+local function upgradeToLevel(unit,targetLevel,costs)
+    if not unit then return end
+
+    while unit and unit.Parent do
+        local level = unit:FindFirstChild("TroopLevel")
+
+        if not level then
+            task.wait(0.5)
+            continue
+        end
+
+        if level.Value >= targetLevel then
+            return
+        end
+
+        local nextCost = costs[level.Value]
+
+        if nextCost then
+            waitMoney(nextCost)
+        end
+
+        local before = level.Value
+
+        local args = {
+            [1] = {
+                [1] = {
+                    [1] = "\226\129\130#",
+                    [2] = unit
+                }
+            }
+        }
+
+        remote:FireServer(unpack(args))
+
+        local start = tick()
+
+        repeat
+            task.wait(0.3)
+
+            if not unit or not unit.Parent then
+                return
+            end
+
+            level = unit:FindFirstChild("TroopLevel")
+
+            if level and level.Value > before then
+                break
+            end
+
+        until tick() - start >= 3
+    end
+end
+
+local ninjaCount = 0
+
+local function placeAndMaxNinja(pos)
+    local ninja = placeUnit("NinjaCameraman",pos,1,NINJA_PLACE)
+
+    if not ninja then
+        return placeAndMaxNinja(pos)
+    end
+
+    ninjaCount += 1
 
     updateValues("NinjaCameraman")
 
-    task.wait(1)
-
-    ninjaValue += 1
-
-    local ninja = getUnitByValue("NinjaCameraman", ninjaValue)
+    ninja = getUnitByValue("NinjaCameraman",ninjaCount)
 
     if not ninja then
-        return
+        ninja = getLatestUnit("NinjaCameraman")
     end
 
-    for _, cost in ipairs(NINJA_UPGRADES) do
-        waitMoney(cost)
-
-        local target = getUnitByValue("NinjaCameraman", ninjaValue)
-
-        if target then
-            upgrade(target)
-        end
-    end
+    upgradeToLevel(ninja,5,NINJA_UPGRADES)
 end
 
-local lane1 = Vector3.new(-69.5605, 2.2020, 55.6358)
+local function placeAndMaxHeli(pos)
+    local heli = placeUnit("CameraHelicopter",pos,5,HELI_PLACE)
+
+    if not heli then
+        return placeAndMaxHeli(pos)
+    end
+
+    heli = getLatestUnit("CameraHelicopter")
+
+    upgradeToLevel(heli,5,HELI_UPGRADES)
+end
+
+local lane1 = Vector3.new(-69.5605,2.2020,55.6358)
 local lane2 = lane1 + Vector3.new(5,0,0)
 
 local offsetZ = 4
@@ -139,50 +212,25 @@ local offsetZ = 4
 placeAndMaxNinja(lane1)
 placeAndMaxNinja(lane2)
 
-for round = 1, 5 do
-    lane1 = lane1 + Vector3.new(0,0,offsetZ)
+for i = 1,5 do
+    lane1 += Vector3.new(0,0,offsetZ)
     placeAndMaxNinja(lane1)
 
-    lane2 = lane2 + Vector3.new(0,0,offsetZ)
+    lane2 += Vector3.new(0,0,offsetZ)
     placeAndMaxNinja(lane2)
 end
 
-lane1 = lane1 + Vector3.new(0,0,offsetZ)
-
+lane1 += Vector3.new(0,0,offsetZ)
 placeAndMaxNinja(lane1)
 
-local function placeAndMaxHeli(position)
-    waitMoney(HELI_PLACE)
-
-    place("CameraHelicopter", position, 5)
-
-    updateValues("CameraHelicopter")
-
-    task.wait(1)
-
-    local heli = getLatestHeli()
-
-    if not heli then
-        return
-    end
-
-    for _, cost in ipairs(HELI_UPGRADES) do
-        waitMoney(cost)
-
-        if heli and heli.Parent then
-            upgrade(heli)
-        end
-    end
-end
-
 local heliPos = Vector3.new(
-    10.974044799804688,
-    2.405604839324951,
-    -16.61794090270996
+10.974044799804688,
+2.405604839324951,
+-16.61794090270996
 )
 
 placeAndMaxHeli(heliPos)
 
-heliPos = heliPos + Vector3.new(5,0,0)
+heliPos += Vector3.new(5,0,0)
 
 placeAndMaxHeli(heliPos)
