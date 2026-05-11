@@ -30,7 +30,7 @@ while true do
             v:Fire()
         end
 
-        task.wait(0.5)
+        task.wait(1)
 
         if char and char:FindFirstChild("Humanoid") then
             char.Humanoid.Health = 0
@@ -39,5 +39,5 @@ while true do
         player.CharacterAdded:Wait()
     end
 
-    task.wait(10)
+    task.wait(5)
 end
