@@ -19,7 +19,7 @@ while true do
             hrp.CFrame = target.CFrame + Vector3.new(0, 3, 0)
         end
 
-        task.wait(1)
+        task.wait(2)
 
         local button = player:WaitForChild("PlayerGui")
             :WaitForChild("Lobby")
@@ -30,7 +30,7 @@ while true do
             v:Fire()
         end
 
-        task.wait(1)
+        task.wait(0.5)
 
         if char and char:FindFirstChild("Humanoid") then
             char.Humanoid.Health = 0
