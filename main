@@ -36,9 +36,15 @@ elseif Method == "Insane" then
         loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm%20%28Insane%29"))()
     end)
 
+elseif Method == "Insane Cheap" then
+
+    task.spawn(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Auto%20farm%20%28Insane%20Cheap%29"))()
+    end)
+
 end
 
-if Method == "Insane" then
+if Method == "Insane" or Method == "Insane Cheap" then
 
     task.spawn(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/maclomeismeaw-ai/Fishguy-Script/main/Tp%20%28Insane%29"))()
