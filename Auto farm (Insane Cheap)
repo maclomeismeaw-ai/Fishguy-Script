@@ -1,0 +1,220 @@
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local money = player:WaitForChild("leaderstats"):WaitForChild("Money")
+local troops = workspace:WaitForChild("Troops")
+local remote = RS.NetworkingContainer.DataRemote
+local currentWave = RS:WaitForChild("MatchData"):WaitForChild("CurrentWave")
+
+local LASER_PLACE = 300
+local LASER_UPGRADES = {400,800,1500,2500}
+
+local TITAN_PLACE = 1000
+local TITAN_UPGRADES = {1500,2000,3000,4000,6000}
+
+repeat task.wait() until currentWave.Value == 1
+task.wait(1)
+
+local function waitMoney(amount)
+	while money.Value < amount do
+		money:GetPropertyChangedSignal("Value"):Wait()
+	end
+	task.wait(0.2)
+end
+
+local function countUnits(name)
+	local total = 0
+
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == name then
+			total += 1
+		end
+	end
+
+	return total
+end
+
+local function updateValues(unitName)
+	local index = 0
+
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == unitName then
+			index += 1
+
+			local val = v:FindFirstChild("Value")
+			if not val then
+				val = Instance.new("IntValue")
+				val.Name = "Value"
+				val.Parent = v
+			end
+
+			val.Value = index
+		end
+	end
+end
+
+local function getLatest(unitName)
+	updateValues(unitName)
+
+	local highest = 0
+	local found = nil
+
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == unitName then
+			local val = v:FindFirstChild("Value")
+
+			if val and val.Value > highest then
+				highest = val.Value
+				found = v
+			end
+		end
+	end
+
+	return found
+end
+
+local function placeRaw(unitName,pos)
+	local args = {
+		[1] = {
+			[1] = {
+				[1] = "\226\129\130\22",
+				[2] = unitName,
+				[3] = pos,
+				[4] = 1
+			}
+		}
+	}
+
+	remote:FireServer(unpack(args))
+end
+
+local function forcePlace(unitName,pos,cost,maxTry)
+	maxTry = maxTry or 30
+
+	for _ = 1,maxTry do
+		waitMoney(cost)
+
+		local before = countUnits(unitName)
+
+		placeRaw(unitName,pos)
+
+		local t = tick()
+
+		repeat
+			task.wait(0.25)
+
+			if countUnits(unitName) > before then
+				task.wait(0.5)
+				return getLatest(unitName)
+			end
+
+		until tick() - t >= 3
+	end
+
+	return nil
+end
+
+local function upgrade(unit)
+	if not unit or not unit.Parent then return end
+
+	local args = {
+		[1] = {
+			[1] = {
+				[1] = "\226\129\130#",
+				[2] = unit
+			}
+		}
+	}
+
+	remote:FireServer(unpack(args))
+	task.wait(1)
+end
+
+local function maxUpgrade(unit,costs)
+	if not unit then return end
+
+	for _,cost in ipairs(costs) do
+		waitMoney(cost)
+
+		if unit and unit.Parent then
+			upgrade(unit)
+		else
+			return
+		end
+	end
+end
+
+local function placeLaser(pos)
+	local unit = forcePlace("LaserCameramanCar",pos,LASER_PLACE)
+	maxUpgrade(unit,LASER_UPGRADES)
+	return unit
+end
+
+local function placeTitan(pos)
+	local unit = forcePlace("TitanTVMan",pos,TITAN_PLACE)
+	maxUpgrade(unit,TITAN_UPGRADES)
+	return unit
+end
+
+local first = Vector3.new(
+	-2.0685062408447266,
+	2.9848105907440186,
+	-22.6137752532959
+)
+
+local l1 = first
+placeLaser(l1)
+
+l1 = l1 - Vector3.new(6,0,0)
+placeLaser(l1)
+
+l1 = l1 - Vector3.new(6,0,0)
+placeLaser(l1)
+
+local row2 = first + Vector3.new(0,0,6)
+placeLaser(row2)
+
+local row2b = row2 - Vector3.new(6,0,0)
+placeLaser(row2b)
+
+placeTitan(Vector3.new(
+	28.62777328491211,
+	8.189640045166016,
+	-66.32428741455078
+))
+
+l1 = l1 - Vector3.new(6,0,0)
+placeLaser(l1)
+
+row2b = row2b - Vector3.new(6,0,0)
+placeLaser(row2b)
+
+row2b = row2b - Vector3.new(6,0,0)
+placeLaser(row2b)
+
+placeTitan(Vector3.new(
+	17.62777328491211,
+	8.189640045166016,
+	-66.32428741455078
+))
+
+local p = Vector3.new(
+	7.62777328491211,
+	8.189640045166016,
+	-66.32428741455078
+)
+
+placeLaser(p)
+
+p = p + Vector3.new(0,0,8)
+placeLaser(p)
+
+p = p + Vector3.new(6,0,0)
+placeLaser(p)
+
+p = p + Vector3.new(6,0,0)
+placeLaser(p)
+
+p = p + Vector3.new(6,0,0)
+placeLaser(p)
