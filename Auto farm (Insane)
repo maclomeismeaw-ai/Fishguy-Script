@@ -4,46 +4,107 @@ local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local money = player:WaitForChild("leaderstats"):WaitForChild("Money")
 local troops = workspace:WaitForChild("Troops")
+local remote = RS.NetworkingContainer.DataRemote
+local currentWave = RS:WaitForChild("MatchData"):WaitForChild("CurrentWave")
 
 local SCIENTIST_PLACE = 100
-local SCIENTIST_UPGRADES = {300, 600}
+local SCIENTIST_UPGRADES = {300,600}
 
 local NINJA_PLACE = 200
-local NINJA_UPGRADES = {200, 300, 400}
+local NINJA_UPGRADES = {200,300,400}
 
 local MECH_PLACE = 400
-local MECH_UPGRADES = {300, 500, 800, 1000}
+local MECH_UPGRADES = {300,500,800,1000}
 
 local SPIDER_PLACE = 300
-local SPIDER_UPGRADES = {800, 1500, 3000, 5000}
+local SPIDER_UPGRADES = {800,1500,3000,5000}
+
+repeat task.wait() until currentWave.Value == 1
+task.wait(1)
 
 local function waitMoney(amount)
 	while money.Value < amount do
 		money:GetPropertyChangedSignal("Value"):Wait()
 	end
-	task.wait(1)
+	task.wait(0.2)
 end
 
-local function place(unitName, position, slot)
+local function countUnits(name)
+	local total = 0
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == name then
+			total += 1
+		end
+	end
+	return total
+end
+
+local function updateValues(unitName)
+	local index = 0
+
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == unitName then
+			index += 1
+
+			local val = v:FindFirstChild("Value")
+			if not val then
+				val = Instance.new("IntValue")
+				val.Name = "Value"
+				val.Parent = v
+			end
+
+			val.Value = index
+		end
+	end
+end
+
+local function getByValue(unitName,num)
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == unitName then
+			local val = v:FindFirstChild("Value")
+			if val and val.Value == num then
+				return v
+			end
+		end
+	end
+end
+
+local function getLatest(unitName)
+	updateValues(unitName)
+
+	local highest = 0
+	local found = nil
+
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == unitName then
+			local val = v:FindFirstChild("Value")
+			if val and val.Value > highest then
+				highest = val.Value
+				found = v
+			end
+		end
+	end
+
+	return found
+end
+
+local function placeRaw(unitName,pos,slot)
 	local args = {
 		[1] = {
 			[1] = {
 				[1] = "\226\129\130\22",
 				[2] = unitName,
-				[3] = position,
+				[3] = pos,
 				[4] = slot
 			}
 		}
 	}
 
-	RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
-	task.wait(1)
+	remote:FireServer(unpack(args))
 end
 
 local function upgrade(unit)
-	if not unit then
-		return
-	end
+	if not unit or not unit.Parent then return end
 
 	local args = {
 		[1] = {
@@ -54,14 +115,12 @@ local function upgrade(unit)
 		}
 	}
 
-	RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
+	remote:FireServer(unpack(args))
 	task.wait(1)
 end
 
 local function sell(unit)
-	if not unit then
-		return
-	end
+	if not unit or not unit.Parent then return end
 
 	local args = {
 		[1] = {
@@ -72,184 +131,115 @@ local function sell(unit)
 		}
 	}
 
-	RS.NetworkingContainer.DataRemote:FireServer(unpack(args))
+	remote:FireServer(unpack(args))
 	task.wait(1)
 end
 
-local function placeCheck(unitName, position, slot)
-	local before = 0
+local function forcePlace(unitName,pos,slot,cost,maxTry)
+	maxTry = maxTry or 30
 
-	for _, v in ipairs(troops:GetChildren()) do
-		if v.Name == unitName then
-			before += 1
-		end
-	end
+	for _ = 1,maxTry do
+		waitMoney(cost)
 
-	place(unitName, position, slot)
+		local before = countUnits(unitName)
 
-	task.wait(1)
+		placeRaw(unitName,pos,slot)
 
-	local after = 0
+		local t = tick()
 
-	for _, v in ipairs(troops:GetChildren()) do
-		if v.Name == unitName then
-			after += 1
-		end
-	end
+		repeat
+			task.wait(0.25)
 
-	return after > before
-end
-
-local function forcePlace(unitName, position, slot)
-	repeat
-		task.wait(0.5)
-	until placeCheck(unitName, position, slot)
-end
-
-local function updateValues(unitName)
-	local index = 0
-
-	for _, v in ipairs(troops:GetChildren()) do
-		if v.Name == unitName then
-			index += 1
-
-			local val = v:FindFirstChild("Value") or Instance.new("IntValue")
-			val.Name = "Value"
-			val.Parent = v
-			val.Value = index
-		end
-	end
-end
-
-local function getLatest(unitName)
-	local latest = nil
-	local highest = 0
-
-	for _, v in ipairs(troops:GetChildren()) do
-		if v.Name == unitName then
-			local val = v:FindFirstChild("Value")
-
-			if val and val.Value > highest then
-				highest = val.Value
-				latest = v
+			if countUnits(unitName) > before then
+				task.wait(0.5)
+				return getLatest(unitName)
 			end
-		end
+
+		until tick() - t >= 3
 	end
 
-	return latest
+	return nil
 end
 
-local function placeScientist(position)
-	waitMoney(SCIENTIST_PLACE)
-	forcePlace("ScientistCameraman", position, 1)
-	updateValues("ScientistCameraman")
-	task.wait(1)
-	return getLatest("ScientistCameraman")
-end
+local function maxUpgrade(unit,costs)
+	if not unit then return end
 
-local function placeMech(position)
-	waitMoney(MECH_PLACE)
-	forcePlace("MechCameraman", position, 1)
-	updateValues("MechCameraman")
-	task.wait(1)
-	return getLatest("MechCameraman")
-end
-
-local function placeAndMaxNinja(position)
-	waitMoney(NINJA_PLACE)
-	forcePlace("NinjaCameraman", position, 1)
-	updateValues("NinjaCameraman")
-	task.wait(1)
-
-	local ninja = getLatest("NinjaCameraman")
-
-	if not ninja then
-		return
-	end
-
-	for i = 1, 2 do
-		waitMoney(NINJA_UPGRADES[i])
-
-		if ninja and ninja.Parent then
-			upgrade(ninja)
-		end
-	end
-
-	return ninja
-end
-
-local function placeAndMaxMech(position)
-	local mech = placeMech(position)
-
-	if not mech then
-		return
-	end
-
-	for _, cost in ipairs(MECH_UPGRADES) do
+	for _,cost in ipairs(costs) do
 		waitMoney(cost)
 
-		if mech and mech.Parent then
-			upgrade(mech)
+		if unit and unit.Parent then
+			upgrade(unit)
+		else
+			return
 		end
 	end
 end
 
-local function placeAndMaxSpider(position)
-	waitMoney(SPIDER_PLACE)
-	forcePlace("CameraSpider", position, 1)
-	updateValues("CameraSpider")
-	task.wait(1)
+local function placeScientist(pos)
+	local u = forcePlace("ScientistCameraman",pos,1,SCIENTIST_PLACE)
+	return u
+end
 
-	local spider = getLatest("CameraSpider")
+local function placeNinja(pos)
+	local u = forcePlace("NinjaCameraman",pos,1,NINJA_PLACE)
+	if not u then return end
 
-	if not spider then
-		return
-	end
+	waitMoney(NINJA_UPGRADES[1]) upgrade(u)
+	waitMoney(NINJA_UPGRADES[2]) upgrade(u)
 
-	for _, cost in ipairs(SPIDER_UPGRADES) do
-		waitMoney(cost)
+	return u
+end
 
-		if spider and spider.Parent then
-			upgrade(spider)
-		end
-	end
+local function placeMech(pos)
+	local u = forcePlace("MechCameraman",pos,1,MECH_PLACE)
+	maxUpgrade(u,MECH_UPGRADES)
+	return u
+end
+
+local function placeSpider(pos)
+	local u = forcePlace("CameraSpider",pos,1,SPIDER_PLACE)
+	maxUpgrade(u,SPIDER_UPGRADES)
+	return u
 end
 
 local scientists = {}
 
-local sciPos = Vector3.new(
-	-95.4683837890625,
-	2.302058458328247,
-	25.501419067382812
-)
+local sciPos = Vector3.new(-95.4683837890625,2.302058458328247,25.501419067382812)
 
-for i = 1, 4 do
-	local scientist = placeScientist(sciPos)
-	table.insert(scientists, scientist)
-	sciPos = sciPos + Vector3.new(0, 0, 3)
+for i = 1,4 do
+	local unit = placeScientist(sciPos)
+	if unit then
+		table.insert(scientists,unit)
+	end
+
+	sciPos += Vector3.new(0,0,3)
 end
 
-for i = 1, 2 do
-	waitMoney(SCIENTIST_UPGRADES[1])
-	upgrade(scientists[i])
+for i = 1,2 do
+	if scientists[i] then
+		waitMoney(SCIENTIST_UPGRADES[1])
+		upgrade(scientists[i])
+	end
 end
 
-local ninja = placeAndMaxNinja(
-	Vector3.new(
-		-2.121683120727539,
-		2.3020589351654053,
-		-23.403955459594727
-	)
-)
+local ninja = placeNinja(Vector3.new(
+	-2.121683120727539,
+	2.3020589351654053,
+	-23.403955459594727
+))
 
-for i = 3, 4 do
-	waitMoney(SCIENTIST_UPGRADES[1])
-	upgrade(scientists[i])
+for i = 3,4 do
+	if scientists[i] then
+		waitMoney(SCIENTIST_UPGRADES[1])
+		upgrade(scientists[i])
+	end
 end
 
-for i = 1, 2 do
-	waitMoney(SCIENTIST_UPGRADES[2])
-	upgrade(scientists[i])
+for i = 1,2 do
+	if scientists[i] then
+		waitMoney(SCIENTIST_UPGRADES[2])
+		upgrade(scientists[i])
+	end
 end
 
 if ninja and ninja.Parent then
@@ -257,83 +247,55 @@ if ninja and ninja.Parent then
 	upgrade(ninja)
 end
 
-for i = 3, 4 do
-	waitMoney(SCIENTIST_UPGRADES[2])
-	upgrade(scientists[i])
+for i = 3,4 do
+	if scientists[i] then
+		waitMoney(SCIENTIST_UPGRADES[2])
+		upgrade(scientists[i])
+	end
 end
 
-placeAndMaxMech(
-	Vector3.new(
-		26.123302459716797,
-		5.0202741622924805,
-		-52.41946029663086
-	)
-)
+placeMech(Vector3.new(26.123302459716797,5.0202741622924805,-52.41946029663086))
+placeMech(Vector3.new(25.471519470214844,5.0202741622924805,-77.07902526855469))
+placeMech(Vector3.new(-16.83924102783203,5.020275115966797,-28.493465423583984))
 
-placeAndMaxMech(
-	Vector3.new(
-		25.471519470214844,
-		5.0202741622924805,
-		-77.07902526855469
-	)
-)
-
-placeAndMaxMech(
-	Vector3.new(
-		-16.83924102783203,
-		5.020275115966797,
-		-28.493465423583984
-	)
-)
-
-local spiderStart = Vector3.new(
-	-6.893928527832031,
-	2.268204927444458,
-	-44.75060272216797
-)
+local spiderStart = Vector3.new(-6.893928527832031,2.268204927444458,-44.75060272216797)
 
 local row1 = spiderStart
-local row2 = spiderStart + Vector3.new(-4, 0, 0)
-local row3 = spiderStart + Vector3.new(-8, 0, 0)
+local row2 = spiderStart + Vector3.new(-4,0,0)
+local row3 = spiderStart + Vector3.new(-8,0,0)
 
 local spiderCount = 0
 local scientistSellIndex = 1
 
-local function spawnSpider(position)
+local function spawnSpider(pos)
 	spiderCount += 1
 
-	if spiderCount == 8 then
-		local ninjaUnit = troops:FindFirstChild("NinjaCameraman")
-
-		if ninjaUnit then
-			sell(ninjaUnit)
-		end
+	if spiderCount == 8 and ninja then
+		sell(ninja)
 	end
 
 	if spiderCount >= 9 and spiderCount <= 12 then
 		local target = scientists[scientistSellIndex]
-
-		if target and target.Parent then
+		if target then
 			sell(target)
 		end
-
 		scientistSellIndex += 1
 	end
 
-	placeAndMaxSpider(position)
+	placeSpider(pos)
 end
 
-for i = 1, 5 do
+for i = 1,5 do
 	spawnSpider(row1)
-	row1 = row1 + Vector3.new(0, 0, -4)
+	row1 += Vector3.new(0,0,-4)
 end
 
-for i = 1, 5 do
+for i = 1,5 do
 	spawnSpider(row2)
-	row2 = row2 + Vector3.new(0, 0, -4)
+	row2 += Vector3.new(0,0,-4)
 end
 
-for i = 1, 2 do
+for i = 1,2 do
 	spawnSpider(row3)
-	row3 = row3 + Vector3.new(0, 0, -4)
+	row3 += Vector3.new(0,0,-4)
 end
