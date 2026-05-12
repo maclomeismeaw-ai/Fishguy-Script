@@ -10,163 +10,135 @@ local currentWave = RS:WaitForChild("MatchData"):WaitForChild("CurrentWave")
 local costs = {800,1500,3000,5000}
 
 repeat
-    task.wait()
+	task.wait()
 until currentWave.Value == 1
 
 task.wait(1)
 
 local function waitMoney(amount)
-    while money.Value < amount do
-        money:GetPropertyChangedSignal("Value"):Wait()
-    end
+	while money.Value < amount do
+		money:GetPropertyChangedSignal("Value"):Wait()
+	end
 end
 
 local function countUnits(name)
-    local total = 0
+	local total = 0
 
-    for _,v in ipairs(troops:GetChildren()) do
-        if v.Name == name then
-            total += 1
-        end
-    end
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == name then
+			total += 1
+		end
+	end
 
-    return total
+	return total
 end
 
 local function updateValues()
-    local index = 0
+	local index = 0
 
-    for _,v in ipairs(troops:GetChildren()) do
-        if v.Name == "CameraSpider" then
-            index += 1
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == "CameraSpider" then
+			index += 1
 
-            local val = v:FindFirstChild("Value") or Instance.new("IntValue")
-            val.Name = "Value"
-            val.Value = index
-            val.Parent = v
-        end
-    end
+			local val = v:FindFirstChild("Value") or Instance.new("IntValue")
+			val.Name = "Value"
+			val.Value = index
+			val.Parent = v
+		end
+	end
 end
 
 local function getCameraByValue(num)
-    for _,v in ipairs(troops:GetChildren()) do
-        if v.Name == "CameraSpider" then
-            local val = v:FindFirstChild("Value")
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == "CameraSpider" then
+			local val = v:FindFirstChild("Value")
 
-            if val and val.Value == num then
-                return v
-            end
-        end
-    end
+			if val and val.Value == num then
+				return v
+			end
+		end
+	end
 end
 
 local function getLatestSpider()
-    updateValues()
+	updateValues()
 
-    local highest = 0
-    local found = nil
+	local highest = 0
+	local found = nil
 
-    for _,v in ipairs(troops:GetChildren()) do
-        if v.Name == "CameraSpider" then
-            local val = v:FindFirstChild("Value")
+	for _,v in ipairs(troops:GetChildren()) do
+		if v.Name == "CameraSpider" then
+			local val = v:FindFirstChild("Value")
 
-            if val and val.Value > highest then
-                highest = val.Value
-                found = v
-            end
-        end
-    end
+			if val and val.Value > highest then
+				highest = val.Value
+				found = v
+			end
+		end
+	end
 
-    return found
+	return found
 end
 
-local function place(unitName, position, slot, cost)
-    while true do
-        waitMoney(cost)
+local function place(unitName,position,slot,cost)
+	while true do
+		waitMoney(cost)
 
-        local before = countUnits(unitName)
+		local before = countUnits(unitName)
 
-        local args = {
-            [1] = {
-                [1] = {
-                    [1] = "\226\129\130\22",
-                    [2] = unitName,
-                    [3] = position,
-                    [4] = slot
-                }
-            }
-        }
+		local args = {
+			[1] = {
+				[1] = {
+					[1] = "\226\129\130\22",
+					[2] = unitName,
+					[3] = position,
+					[4] = slot
+				}
+			}
+		}
 
-        remote:FireServer(unpack(args))
+		remote:FireServer(unpack(args))
 
-        local start = tick()
+		local start = tick()
 
-        repeat
-            task.wait(0.3)
+		repeat
+			task.wait(0.3)
 
-            if countUnits(unitName) > before then
-                task.wait(0.5)
-                return true
-            end
+			if countUnits(unitName) > before then
+				task.wait(0.5)
+				return true
+			end
 
-        until tick() - start >= 3
-    end
+		until tick() - start >= 3
+	end
 end
 
-local function upgradeToLevel(unit,targetLevel,costTable)
-    if not unit then return end
+local function upgrade(unit)
+	if not unit then return end
 
-    while unit and unit.Parent do
-        local level = unit:FindFirstChild("TroopLevel")
+	local args = {
+		[1] = {
+			[1] = {
+				[1] = "\226\129\130#",
+				[2] = unit
+			}
+		}
+	}
 
-        if not level then
-            task.wait(0.5)
-            continue
-        end
-
-        if level.Value >= targetLevel then
-            return
-        end
-
-        local nextCost = costTable[level.Value]
-
-        if nextCost then
-            waitMoney(nextCost)
-        end
-
-        local before = level.Value
-
-        local args = {
-            [1] = {
-                [1] = {
-                    [1] = "\226\129\130#",
-                    [2] = unit
-                }
-            }
-        }
-
-        remote:FireServer(unpack(args))
-
-        local start = tick()
-
-        repeat
-            task.wait(0.3)
-
-            if not unit or not unit.Parent then
-                return
-            end
-
-            level = unit:FindFirstChild("TroopLevel")
-
-            if level and level.Value > before then
-                break
-            end
-
-        until tick() - start >= 3
-    end
+	remote:FireServer(unpack(args))
+	task.wait(1)
 end
 
-place("CameraSpider", Vector3.new(-57.5,2.16,10.05),1,300)
+local function maxUpgrade(unit,costTable)
+	if not unit then return end
+
+	for _,cost in ipairs(costTable) do
+		waitMoney(cost)
+		upgrade(unit)
+	end
+end
+
+place("CameraSpider",Vector3.new(-57.5,2.16,10.05),1,300)
 updateValues()
 
 task.wait(1)
@@ -175,12 +147,12 @@ local pos = Vector3.new(-66.5,2.20,33.05)
 local placed = 0
 
 while placed < 4 do
-    if place("ScientistCameraman",pos,1,100) then
-        pos += Vector3.new(0,0,2)
-        placed += 1
-    end
+	if place("ScientistCameraman",pos,1,100) then
+		pos += Vector3.new(0,0,2)
+		placed += 1
+	end
 
-    task.wait(0.5)
+	task.wait(0.5)
 end
 
 task.wait(1)
@@ -195,26 +167,26 @@ task.wait(1)
 local cam1 = getCameraByValue(1)
 local cam2 = getCameraByValue(2)
 
-upgradeToLevel(cam2,5,costs)
-upgradeToLevel(cam1,5,costs)
+maxUpgrade(cam2,costs)
+maxUpgrade(cam1,costs)
 
 local offsetZ = 5
 
 while true do
-    basePos += Vector3.new(0,0,offsetZ)
+	basePos += Vector3.new(0,0,offsetZ)
 
-    place("CameraSpider",basePos,1,300)
-    updateValues()
+	place("CameraSpider",basePos,1,300)
+	updateValues()
 
-    task.wait(1)
+	task.wait(1)
 
-    local latest = getLatestSpider()
+	local latest = getLatestSpider()
 
-    if not latest then
-        break
-    end
+	if not latest then
+		break
+	end
 
-    upgradeToLevel(latest,5,costs)
+	maxUpgrade(latest,costs)
 
-    task.wait(1)
+	task.wait(1)
 end
